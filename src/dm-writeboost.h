@@ -449,7 +449,7 @@ struct wb_device {
 
 	u32 nr_read_cache_cells;
 	u32 nr_read_cache_cells_saved;
-	struct work_struct read_cache_work;
+	struct delayed_work read_cache_work;
 	struct read_cache_cells *read_cache_cells;
 	u32 read_cache_threshold; /* Tunable */
 	u32 read_cache_threshold_saved;

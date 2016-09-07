@@ -1188,7 +1188,7 @@ static void read_cache_cell_copy_data(struct wb_device *wb, struct bio *bio, int
 		copy_bio_payload(cell->data, bio);
 
 	if (atomic_dec_and_test(&cells->ack_count))
-		queue_work(cells->wq, &wb->read_cache_work);
+		queue_delayed_work(cells->wq, &wb->read_cache_work, msecs_to_jiffies(100));
 }
 
 /*
@@ -1364,7 +1364,7 @@ static void read_cache_cancel_background(struct read_cache_cells *cells)
 
 static void read_cache_proc(struct work_struct *work)
 {
-	struct wb_device *wb = container_of(work, struct wb_device, read_cache_work);
+	struct wb_device *wb = container_of(work, struct wb_device, read_cache_work.work);
 	struct read_cache_cells *cells = wb->read_cache_cells;
 	u32 i;
 
@@ -1380,7 +1380,7 @@ static void read_cache_proc(struct work_struct *work)
 static int init_read_cache_cells(struct wb_device *wb)
 {
 	struct read_cache_cells *cells;
-	INIT_WORK(&wb->read_cache_work, read_cache_proc);
+	INIT_DELAYED_WORK(&wb->read_cache_work, read_cache_proc);
 	cells = alloc_read_cache_cells(wb, wb->nr_read_cache_cells);
 	if (!cells)
 		return -ENOMEM;
