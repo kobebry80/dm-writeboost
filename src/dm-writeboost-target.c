@@ -1170,6 +1170,7 @@ static void might_cancel_read_cache_cell(struct wb_device *wb, struct bio *bio)
 		found->cancelled = true;
 }
 
+static void read_cache_proc(struct work_struct *work);
 static void read_cache_cell_copy_data(struct wb_device *wb, struct bio *bio, int error)
 {
 	struct per_bio_data *pbd = per_bio_data(wb, bio);
@@ -1187,8 +1188,10 @@ static void read_cache_cell_copy_data(struct wb_device *wb, struct bio *bio, int
 	if (!cell->cancelled)
 		copy_bio_payload(cell->data, bio);
 
-	if (atomic_dec_and_test(&cells->ack_count))
-		queue_delayed_work(cells->wq, &wb->read_cache_work, msecs_to_jiffies(100));
+	if (atomic_dec_and_test(&cells->ack_count)) {
+		INIT_DELAYED_WORK(&wb->read_cache_work, read_cache_proc);
+		queue_delayed_work(cells->wq, &wb->read_cache_work, msecs_to_jiffies(30));
+	}
 }
 
 /*
@@ -1380,7 +1383,6 @@ static void read_cache_proc(struct work_struct *work)
 static int init_read_cache_cells(struct wb_device *wb)
 {
 	struct read_cache_cells *cells;
-	INIT_DELAYED_WORK(&wb->read_cache_work, read_cache_proc);
 	cells = alloc_read_cache_cells(wb, wb->nr_read_cache_cells);
 	if (!cells)
 		return -ENOMEM;
