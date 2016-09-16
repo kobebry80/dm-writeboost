@@ -1480,15 +1480,15 @@ static int consume_essential_argv(struct wb_device *wb, struct dm_arg_set *as)
 	int err = 0;
 	struct dm_target *ti = wb->ti;
 
-	err = dm_get_device(ti, dm_shift_arg(as), dm_table_get_mode(ti->table),
-			    &wb->backing_dev);
+	fmode_t mode = dm_table_get_mode(ti->table) | FMODE_EXCL;
+
+	err = dm_get_device(ti, dm_shift_arg(as), mode, &wb->backing_dev);
 	if (err) {
 		DMERR("Failed to get backing_dev");
 		return err;
 	}
 
-	err = dm_get_device(ti, dm_shift_arg(as), dm_table_get_mode(ti->table),
-			    &wb->cache_dev);
+	err = dm_get_device(ti, dm_shift_arg(as), mode, &wb->cache_dev);
 	if (err) {
 		DMERR("Failed to get cache_dev");
 		goto bad_get_cache;
